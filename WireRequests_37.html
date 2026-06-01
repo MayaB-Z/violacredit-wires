@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Viola Credit — Wire Requests</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+  <style>
+:root {
+  --font-ui:   'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'IBM Plex Sans', system-ui, sans-serif;
+  --hdr-bg: oklch(0.975 0.004 256); --hdr-fg: #002040;
+  --hdr-border: oklch(0.905 0.006 256); --hdr-div: oklch(0.935 0.005 256);
+  --hdr-cb-b: rgba(0,32,64,.45); --hdr-cb-f: #002040; --hdr-cb-c: #fff;
+  --ink: oklch(0.28 0.012 256); --ink-2: oklch(0.46 0.012 256);
+  --ink-3: oklch(0.62 0.010 256); --ink-4: oklch(0.74 0.008 256);
+  --bg: oklch(0.984 0.003 256); --surface: #ffffff;
+  --surface-2: oklch(0.975 0.004 256); --line: oklch(0.905 0.006 256);
+  --line-2: oklch(0.935 0.005 256);
+  --navy: #002040; --navy-2: #0a3556; --blue: #a0c0e0; --blue-mid: #5b86b0;
+  --accent: #002040; --accent-deep: #001628; --accent-weak: #eef3f9;
+  --accent-line: #c5d8ec; --sel: #e7eff8; --sel-line: #b7cee6;
+  --positive: oklch(0.56 0.10 158); --positive-bg: oklch(0.96 0.03 158);
+  --warn: oklch(0.66 0.12 70); --warn-bg: oklch(0.96 0.04 75);
+  --r: 7px; --r-sm: 5px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body { font-family: var(--font-ui); color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.wr-btn { font-family: inherit; font-size: 14px; font-weight: 600; border-radius: var(--r-sm); padding: 11px 20px; cursor: pointer; border: 1px solid transparent; transition: background .14s, border-color .14s, color .14s; display: inline-flex; align-items: center; gap: 8px; }
+.wr-btn-primary { background: var(--accent); color: #fff; box-shadow: 0 1px 2px rgba(0,32,64,.35); }
+.wr-btn-primary:hover:not(:disabled) { background: var(--navy-2); }
+.wr-btn-ghost { background: var(--surface); color: var(--ink-2); border-color: var(--line); }
+.wr-btn-ghost:hover { border-color: var(--ink-4); color: var(--ink); }
+.wr-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; padding: 4px 10px; border-radius: 100px; }
+.wr-chip-blue { background: var(--accent-weak); color: var(--accent-deep); }
+.wr-chip-green { background: var(--positive-bg); color: var(--positive); }
+.wr-chip-neutral { background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line); }
+.wr-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.app { font-family: var(--font-ui); color: var(--ink); background: linear-gradient(180deg, rgba(160,192,224,.28), rgba(160,192,224,0) 300px), var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+.brand-strip { height: 4px; flex: none; background: linear-gradient(90deg, var(--navy), var(--blue)); }
+.app-top { flex: none; height: 60px; display: flex; align-items: center; gap: 18px; padding: 0 26px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.app-nav { display: flex; gap: 4px; }
+.app-tab { font: inherit; font-size: 14px; font-weight: 500; color: var(--ink-2); background: transparent; border: none; cursor: pointer; padding: 8px 14px; border-radius: var(--r-sm); transition: background .12s, color .12s; }
+.app-tab:hover { background: var(--surface-2); color: var(--ink); }
+.app-tab.is-active { background: var(--accent-weak); color: var(--accent); font-weight: 600; }
+.app-toolbar { flex: none; display: flex; align-items: center; gap: 14px; padding: 18px 26px 14px; }
+.grid-wrap { flex: 1; overflow: auto; padding: 0 26px 10px; }
+.g2 { border-collapse: separate; border-spacing: 0; width: 100%; table-layout: fixed; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 1px 2px rgba(20,30,50,.04), 0 10px 30px rgba(20,30,50,.05); }
+.g2 thead .cols th { position: sticky; top: 0; z-index: 5; background: var(--hdr-bg); padding: 14px 13px; text-align: left; font-size: 13.5px; font-weight: 600; letter-spacing: 0.01em; color: var(--hdr-fg); white-space: nowrap; border-bottom: 1px solid var(--hdr-border); }
+.g2 thead .cols th.gs { box-shadow: inset 1px 0 0 var(--hdr-div); }
+.g2 thead .cb { border-color: var(--hdr-cb-b); background: transparent; }
+.g2 thead .cb.is-on { background: var(--hdr-cb-f); border-color: var(--hdr-cb-f); }
+.g2 thead .cb.is-on svg { stroke: var(--hdr-cb-c); }
+.g2 thead .cols th.r { text-align: right; }
+.g2 .gs { box-shadow: inset 1px 0 0 var(--line-2); }
+.g2 thead .cols th.gs { box-shadow: inset 1px 0 0 var(--line-2); }
+.g2 tbody td { border-bottom: 1px solid var(--line-2); padding: 6px 0; vertical-align: middle; background: transparent; }
+.g2 tbody tr:last-child td { border-bottom: none; }
+.g2 tbody tr:hover td { background: var(--surface-2); }
+.g2 tbody tr.sel td { background: var(--sel); }
+.g2 tbody tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--navy); }
+.g2 tbody tr.done td { background: var(--positive-bg); }
+.g2 tbody tr.done:hover td { background: var(--positive-bg); }
+.gin { width: 100%; height: 40px; border: 1.5px solid transparent; background: transparent; font-family: inherit; font-size: 13px; color: var(--ink); padding: 0 11px; outline: none; border-radius: 7px; transition: border-color .1s, box-shadow .1s, background .1s; }
+.gcell { padding: 0 4px; width: 100%; min-width: 0; box-sizing: border-box; }
+.gtext { padding: 0 10px; font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+.gtext .nmtxt { white-space: normal; overflow-wrap: anywhere; }
+.bdot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.gmuted { color: var(--ink-4); }
+.gin:hover { border-color: var(--line); background: var(--surface); }
+.gin:focus { border-color: var(--blue-mid); box-shadow: 0 0 0 2px var(--accent-weak); background: var(--surface); }
+.gin::placeholder { color: var(--ink-4); }
+.gin.amt { text-align: right; font-family: var(--font-mono); font-weight: 600; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.gin.date { font-family: var(--font-ui); font-size: 12.5px; color: var(--ink); letter-spacing: 0.01em; }
+textarea.gin { resize: none; line-height: 1.35; padding-top: 10px; padding-bottom: 10px; white-space: pre-wrap; min-height: 40px; overflow: hidden; scrollbar-width: none; }
+textarea.gin::-webkit-scrollbar { display: none; }
+.pick { display: flex; align-items: center; gap: 7px; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; min-height: 40px; padding: 5px 9px; background: transparent; border: 1.5px solid transparent; border-radius: 7px; cursor: pointer; font: inherit; text-align: left; color: var(--ink); transition: border-color .1s, box-shadow .1s, background .1s; }
+.pick:hover { border-color: var(--line); background: var(--surface); }
+.pick.open { border-color: var(--blue-mid); box-shadow: 0 0 0 2px var(--accent-weak); background: var(--surface); }
+.pick .pl { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.pick .pl .nm { font-size: 12.5px; font-weight: 500; line-height: 1.3; white-space: normal; overflow-wrap: anywhere; font-family: var(--font-ui); }
+.pick .pl .sb { font-size: 10px; color: var(--ink-3); font-family: var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.pick .ph { flex: 1; color: var(--ink-4); font-size: 13px; }
+.pick .chev { flex: none; color: var(--ink-4); }
+.wtag { display: inline-flex; align-items: center; font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 6px; white-space: normal; word-break: break-word; line-height: 1.3; }
+.pop { position: fixed; z-index: 9000; background: var(--surface); border: 1px solid var(--line); border-radius: 11px; box-shadow: 0 18px 50px rgba(0,22,40,.24); padding: 5px; max-height: 320px; overflow: auto; }
+.pop-item { display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 8px; cursor: pointer; transition: background .1s; }
+.pop-item:hover { background: var(--surface-2); }
+.pop-item.on { background: var(--accent-weak); }
+.pop-item .nm { font-size: 13.5px; font-weight: 500; font-family: var(--font-ui); }
+.pop-item .sb { font-size: 11.5px; color: var(--ink-3); font-family: var(--font-mono); margin-top: 1px; }
+.pop-check { margin-left: auto; color: var(--accent); flex: none; }
+.pop-group-label { padding: 8px 11px 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); user-select: none; }
+.pop-group-label + .pop-item, .pop-group-divider + .pop-group-label { border-top: 1px solid var(--line-2); padding-top: 10px; margin-top: 2px; }
+.icon-btn { width: 26px; height: 26px; border-radius: var(--r-sm); border: none; cursor: pointer; background: transparent; color: var(--ink-3); display: inline-flex; align-items: center; justify-content: center; transition: background .12s, color .12s; }
+.icon-btn:hover { background: var(--line-2); color: var(--ink); }
+.icon-btn.danger:hover { background: oklch(0.95 0.04 25); color: oklch(0.55 0.18 25); }
+.app-foot { flex: none; display: flex; align-items: center; gap: 22px; padding: 14px 26px; background: var(--surface); border-top: 1px solid var(--line); }
+.cb { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--ink-4); background: var(--surface); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: background .12s, border-color .12s; flex: none; }
+.cb.is-on { background: var(--accent); border-color: var(--accent); }
+.cb svg { opacity: 0; }
+.cb.is-on svg { opacity: 1; }
+.modal-back { position: fixed; inset: 0; background: rgba(0,22,40,.42); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 40px; }
+.modal { background: var(--surface); border-radius: 14px; width: 100%; max-width: 560px; box-shadow: 0 24px 70px rgba(0,22,40,.35); overflow: hidden; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--navy); color: #fff; padding: 13px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; box-shadow: 0 12px 40px rgba(0,22,40,.4); z-index: 60; white-space: nowrap; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 1px 2px rgba(20,30,50,.04); }
+.opt-row { display: grid; align-items: center; gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--line-2); }
+.opt-row:last-child { border-bottom: none; }
+.opt-row:hover { background: var(--surface-2); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.col-map-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.col-map-table th { text-align: left; font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); padding: 10px 16px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.col-map-table td { padding: 10px 16px; border-bottom: 1px solid var(--line-2); vertical-align: middle; }
+.col-map-table tr:last-child td { border-bottom: none; }
+.col-map-table tr:hover td { background: var(--surface-2); }
+.col-map-select { font-family: inherit; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 6px 28px 6px 10px; outline: none; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%237b8190' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; min-width: 200px; }
+.col-map-select:hover { border-color: var(--ink-4); }
+.col-map-select:focus { border-color: var(--blue-mid); box-shadow: 0 0 0 2px var(--accent-weak); }
+.loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,.85); display: flex; align-items: center; justify-content: center; z-index: 200; }
+.loading-spinner { width: 28px; height: 28px; border: 2.5px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<div id="fallback" style="font-family:sans-serif;padding:40px;color:#c00;display:none">
+  <h2>Failed to load</h2>
+  <p id="fallback-msg">Scripts could not load. Make sure you are connected to the internet when first opening this file.</p>
+</div>
+<script>
+  window.onerror = function(msg, src, line) {
+    document.getElementById('fallback').style.display='block';
+    document.getElementById('fallback-msg').textContent = 'Error: ' + msg + ' (line ' + line + ')';
+  };
+  // Check CDN scripts loaded
+  window.addEventListener('load', function() {
+    if (typeof React === 'undefined' || typeof ReactDOM === 'undefined' || typeof Babel === 'undefined') {
+      document.getElementById('fallback').style.display='block';
+      document.getElementById('fallback-msg').textContent =
+        'Required scripts failed to load from unpkg.com. ' +
+        (typeof React === 'undefined' ? 'React missing. ' : '') +
+        (typeof ReactDOM === 'undefined' ? 'ReactDOM missing. ' : '') +
+        (typeof Babel === 'undefined' ? 'Babel missing. ' : '') +
+        'Please check your internet connection.';
+    }
+  });
+</script>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+/* ── CONFIG ── */
+const MONDAY_TOKEN    = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjU1NTA5MzEyMCwiYWFpIjoxMSwidWlkIjo2NTYwMTgxNiwiaWFkIjoiMjAyNS0wOC0yN1QxMzoyNDoyNy4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MTk3ODcyOTAsInJnbiI6ImV1YzEifQ.0gce6KsFJXlaDJCzd4O52gm2Zn5HxG2J_-xqsznI9Yg';
+const SOURCE_BOARD_ID = '5093322708';
+const DEST_BOARD_ID   = '5093410527';
+
+/* Groups on source board that are "internal accounts" (debit side) */
+const ACCOUNT_GROUP_NAMES = ['citi', 'valley', 'us bank', 'leumi', 'edb'];
+/* Groups that are beneficiaries / portfolio companies (credit side) */
+const BENE_GROUP_KEYWORDS = ['portfolio', 'third part'];
+/* Group for wire types */
+const WIRE_TYPE_GROUP_KEYWORD = 'wire type';
+
+/* ── MONDAY API ── */
+async function mondayQuery(query, variables = {}) {
+  const r = await fetch('https://api.monday.com/v2', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: MONDAY_TOKEN },
+    body: JSON.stringify({ query, variables }),
+  });
+  if (!r.ok) throw new Error(`Monday API HTTP ${r.status}: ${r.statusText}`);
+  const j = await r.json();
+  if (j.errors?.length) {
+    const msg = j.errors.map(e => e.message).join('; ');
+    console.error('Monday API errors:', j.errors);
+    throw new Error(msg);
+  }
+  return j.data;
+}
+
+async function fetchSourceBoardFull() {
+  const q = `query($id:ID!){
+    boards(ids:[$id]){
+      name
+      columns{id title type settings_str}
+      groups{id title}
+      items_page(limit:500){
+        items{
+          id name
+          group{id title}
+          column_values{id text value column{id title type}}
+        }
+      }
+    }
+  }`;
+  const d = await mondayQuery(q, { id: SOURCE_BOARD_ID });
+  return d.boards[0];
+}
+
+async function fetchDestBoard() {
+  const q = `query($id:ID!){boards(ids:[$id]){name columns{id title type settings_str}}}`;
+  const d = await mondayQuery(q, { id: DEST_BOARD_ID });
+  return d.boards[0];
+}
+
+async function fetchWorkspace() {
+  const q = `query{me{name email account{name}}}`;
+  const d = await mondayQuery(q);
+  return d.me;
+}
+
+/* ── PARSE SOURCE BOARD ──
+   Returns { wireTypes[], accountsByGroup{groupTitle:[{name,bank,acct,aba}]}, beneficiaries[] }
+*/
+function parseSourceBoard(board) {
+  if (!board) return null;
+  const items = board.items_page?.items || [];
+
+  const wireTypes       = [];
+  const accountsByGroup = {};  // key = group title
+  const beneficiaries   = [];
+  const allGroupsSet    = new Set();  // all group titles (excluding wire types group)
+  const allGroupItems   = {};         // all groups → items
+
+  for (const item of items) {
+    const grpRaw   = (item.group?.title || '').trim();
+    const grpLower = grpRaw.toLowerCase();
+    const name     = item.name;
+
+    /* Build column-value lookup by column title (lowercase) */
+    const cv = {};
+    for (const c of (item.column_values || [])) {
+      const key = (c.column?.title || '').toLowerCase().trim();
+      if (c.text) cv[key] = c.text;
+    }
+    const acctNo = cv['account no.'] || cv['account number'] || cv['account no'] || cv['acct'] || cv['account'] || '';
+    const aba    = cv['aba'] || cv['routing'] || cv['routing number'] || '';
+    const bank   = cv['bank'] || grpRaw;
+
+    /* Wire types */
+    if (grpLower.includes(WIRE_TYPE_GROUP_KEYWORD)) {
+      wireTypes.push({ name, tone: toneFor(name) });
+      continue;
+    }
+
+    /* Track all non-wire-type groups and their items */
+    if (grpRaw) allGroupsSet.add(grpRaw);
+    if (grpRaw && !allGroupItems[grpRaw]) allGroupItems[grpRaw] = [];
+    if (grpRaw) allGroupItems[grpRaw].push({ name, bank, acct: acctNo, aba });
+
+    /* Internal account groups */
+    if (ACCOUNT_GROUP_NAMES.some(g => grpLower === g || grpLower.startsWith(g))) {
+      if (!accountsByGroup[grpRaw]) accountsByGroup[grpRaw] = [];
+      accountsByGroup[grpRaw].push({ name, bank, acct: acctNo, aba });
+      continue;
+    }
+
+    /* Portfolio companies / third parties */
+    if (BENE_GROUP_KEYWORDS.some(k => grpLower.includes(k))) {
+      beneficiaries.push({ name, bank, acct: acctNo, aba });
+    }
+  }
+
+  return { wireTypes, accountsByGroup, beneficiaries, allGroups: [...allGroupsSet], allGroupItems };
+}
+
+/* ── SUBMIT TO MONDAY ── */
+
+async function submitWireToMonday(row, columnMapping, destColumns) {
+  const colVals = {};
+  const log = [];
+
+  for (const [field, colId] of Object.entries(columnMapping)) {
+    if (!colId) continue;
+    let val = row[field];
+    if (val === undefined || val === null || val === '') { log.push(`${field}: empty — skipped`); continue; }
+
+    if (val === '__bene__') val = 'Company/Third Party';
+
+    const col = destColumns.find(c => c.id === colId);
+    if (!col) { log.push(`${field}: column ${colId} not found`); continue; }
+    const s = String(val);
+
+    let cv;
+    try {
+      switch (col.type) {
+        case 'dropdown': {
+          cv = { labels: [s] };
+          break;
+        }
+        case 'color':
+        case 'status':     { cv = { label: s }; break; }
+        case 'date':       { cv = s.slice(0, 10); break; }
+        case 'numbers':    { const n = parseFloat(s.replace(/[^0-9.-]/g, '')); cv = isNaN(n) ? null : n; break; }
+        case 'long_text':  { cv = { text: s }; break; }
+        case 'text':       { cv = s; break; }
+        case 'email':      { cv = { email: s, text: s }; break; }
+        case 'phone':      { cv = { phone: s, countryShortName: 'US' }; break; }
+        case 'link':       { cv = { url: s, text: s }; break; }
+        default:           { cv = s; break; }
+      }
+    } catch (e) {
+      log.push(`${field} → "${col.title}" (${col.type}): ERROR ${e.message}`);
+      continue;
+    }
+
+    if (cv !== null && cv !== undefined) {
+      colVals[colId] = cv;
+      log.push(`${field} → "${col.title}" (${col.type}): ${JSON.stringify(cv)}`);
+    } else {
+      log.push(`${field} → "${col.title}" (${col.type}): null — skipped`);
+    }
+  }
+
+  console.log('=== Wire submission ===');
+  log.forEach(l => console.log(' ', l));
+  const itemName = row.wireType || row.creditAccount || 'Wire';
+  console.log('Item name:', itemName, '\ncolumn_values:', JSON.stringify(colVals, null, 2));
+
+  const mut = `mutation($bId:ID!,$nm:String!,$cv:JSON!){create_item(board_id:$bId,item_name:$nm,column_values:$cv,create_labels_if_missing:true){id}}`;
+  try {
+    const d = await mondayQuery(mut, { bId: DEST_BOARD_ID, nm: itemName, cv: JSON.stringify(colVals) });
+    if (!d?.create_item?.id) throw new Error('No item ID returned');
+    return d.create_item.id;
+  } catch (fullErr) {
+    /* Retry column-by-column to identify the bad one */
+    console.warn('Full submission failed:', fullErr.message, '— retrying column by column');
+    const goodCols = {};
+    const badCols  = [];
+    for (const [colId, cv] of Object.entries(colVals)) {
+      const col = destColumns.find(c => c.id === colId);
+      try {
+        const test = await mondayQuery(mut, { bId: DEST_BOARD_ID, nm: '__test__', cv: JSON.stringify({ [colId]: cv }) });
+        if (test?.create_item?.id) {
+          await mondayQuery(`mutation($id:ID!){delete_item(item_id:$id){id}}`, { id: test.create_item.id }).catch(() => {});
+        }
+        goodCols[colId] = cv;
+      } catch (colErr) {
+        badCols.push(`"${col?.title || colId}" (${col?.type}): ${colErr.message}`);
+        console.error(`BAD column "${col?.title}" (${col?.type}):`, cv, '→', colErr.message);
+      }
+    }
+    if (badCols.length) throw new Error(`Invalid value for column(s): ${badCols.join('; ')}`);
+    const d2 = await mondayQuery(mut, { bId: DEST_BOARD_ID, nm: itemName, cv: JSON.stringify(goodCols) });
+    if (!d2?.create_item?.id) throw new Error('No item ID returned');
+    return d2.create_item.id;
+  }
+}
+
+
+const BANK_COLORS = {
+  'citi': '#16a0c4', 'valley': '#e8742a', 'us bank': '#1f8a5b',
+  'leumi': '#2a6fdb', 'edb': '#7b5ea8',
+  'jpmorgan': '#2a6fdb', 'bank of america': '#d4453b', 'wells fargo': '#e0a020',
+  'pnc': '#e8742a',
+  'company/third party': '#e91e8c',
+  '__bene__': '#e91e8c',
+};
+const bankColor = (b) => {
+  if (!b) return '#9aa3af';
+  const lower = b.toLowerCase();
+  for (const [k, v] of Object.entries(BANK_COLORS)) if (lower.includes(k)) return v;
+  return '#9aa3af';
+};
+const bankShort = (b) => (b || '').replace(/,?\s*N\.A\.?$/, '').replace(/\s*Bank$/, '');
+
+const TONES = {
+  blue:   { background: 'var(--accent-weak)', color: 'var(--accent)' },
+  amber:  { background: 'var(--warn-bg)',     color: 'oklch(0.50 0.13 70)' },
+  slate:  { background: 'var(--surface-2)',   color: 'var(--ink-2)', boxShadow: 'inset 0 0 0 1px var(--line)' },
+  violet: { background: '#efe9fb',            color: '#6b4fa8' },
+};
+const TONE_MAP = { 'Domestic': 'blue', 'International': 'amber', 'Internal transfer': 'slate', 'Internal Transfer': 'slate', 'FX / Multi-ccy': 'violet' };
+const toneFor = (n) => TONE_MAP[n] || 'slate';
+
+/* ── INLINE LOGO SVG ── */
+const LOGO_RAW = `<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 354.2 167.49"><defs><style>.cls-1{fill:#012f41;}.cls-2{fill:#a3c2e7;}</style></defs><g><path class="cls-1" d="M215.49,102.25l-3.09,2.65c-1.82-2.07-4.15-3.09-6.94-3.09-2.54,0-4.69,.87-6.4,2.58-1.71,1.71-2.54,3.85-2.54,6.44s.84,4.72,2.54,6.43c1.71,1.71,3.85,2.55,6.4,2.55,2.87,0,5.24-1.06,7.02-3.16l3.05,2.65c-2.47,2.91-6.11,4.62-10.07,4.62-3.74,0-6.94-1.24-9.56-3.71-2.58-2.51-3.89-5.64-3.89-9.38s1.31-6.87,3.89-9.38c2.62-2.51,5.82-3.75,9.56-3.75,4.04,0,7.38,1.53,10.04,4.54"/><path class="cls-1" d="M227.41,110.39h4.84c2.47,0,4.18-1.71,4.18-4.15s-1.64-4-3.82-4h-5.2v8.14Zm-4.54,13.09v-25.34h9.85c2.29,0,4.22,.76,5.82,2.33,1.6,1.53,2.4,3.42,2.4,5.71,0,3.31-1.85,6.03-4.62,7.2l6.15,10.11h-5.13l-5.42-9.02h-4.51v9.02h-4.54Z"/></g><polygon class="cls-1" points="249.63 123.48 249.63 98.14 265.77 98.14 265.77 102.25 254.17 102.25 254.17 108.29 265.05 108.29 265.05 112.4 254.17 112.4 254.17 119.38 266.03 119.38 266.03 123.48 249.63 123.48"/><path class="cls-1" d="M278.83,119.38h4.22c6.29,0,9.05-3.31,9.05-8.51s-2.73-8.62-9.09-8.62h-4.18v17.12Zm-4.54,4.11v-25.34h9.05c4.18,0,7.45,1.16,9.78,3.53,2.36,2.33,3.53,5.38,3.53,9.2s-1.16,6.87-3.49,9.16c-2.33,2.29-5.6,3.45-9.78,3.45h-9.09Z"/><rect class="cls-1" x="304.72" y="98.14" width="4.55" height="25.34"/><polygon class="cls-1" points="316.61 98.14 316.61 102.25 323.48 102.25 323.48 123.48 328.02 123.48 328.02 102.25 334.9 102.25 334.9 98.14 316.61 98.14"/><polygon class="cls-1" points="200.92 82.8 190.54 58.04 193.56 58.04 201.91 78.15 210.22 58.04 213.24 58.04 202.87 82.8 200.92 82.8"/><rect class="cls-1" x="221.46" y="58.04" width="2.77" height="24.76"/><path class="cls-1" d="M235.6,70.44c0,2.95,.96,5.44,2.88,7.39,1.95,1.95,4.37,2.91,7.28,2.91s5.33-.96,7.25-2.91c1.92-1.95,2.88-4.44,2.88-7.39s-.96-5.4-2.88-7.35-4.33-2.95-7.25-2.95-5.33,.99-7.28,2.95c-1.92,1.95-2.88,4.4-2.88,7.35m-2.73,0c0-3.66,1.24-6.71,3.73-9.16,2.52-2.45,5.58-3.69,9.16-3.69s6.64,1.24,9.13,3.69c2.52,2.45,3.76,5.5,3.76,9.16s-1.24,6.75-3.76,9.2c-2.49,2.45-5.54,3.66-9.13,3.66s-6.64-1.21-9.16-3.66c-2.49-2.45-3.73-5.54-3.73-9.2"/><polygon class="cls-1" points="267.15 82.8 267.15 58.04 269.92 58.04 269.92 80.24 282.06 80.24 282.06 82.8 267.15 82.8"/><path class="cls-1" d="M294.82,74.13h9.88l-4.94-11.79-4.94,11.79Zm-6.61,8.67l10.48-24.76h2.13l10.48,24.76h-2.98l-2.56-6.11h-12.01l-2.56,6.11h-2.98Z"/><polygon class="cls-2" points="152.8 18.4 152.81 61.19 179.67 18.4 152.8 18.4"/><polygon class="cls-2" points="99.56 103.64 99.54 146.23 126.05 103.88 152.91 61.02 126.19 61 99.56 103.64"/><polygon class="cls-2" points="99.55 103.64 99.5 61.19 72.84 18.41 46.32 18.4 99.55 103.64"/><polygon class="cls-1" points="126.22 18.4 99.5 61.19 99.56 103.64 152.8 18.4 126.22 18.4"/><polygon class="cls-1" points="19.41 18.4 99.54 146.23 99.56 103.64 46.32 18.4 19.41 18.4"/></svg>`;
+
+/* ── SHARED UI COMPONENTS ── */
+function WTag({ name, tone }) {
+  return <span className="wtag" style={TONES[tone] || TONES.slate}>{name}</span>;
+}
+
+function Checkbox({ on, onClick, dim }) {
+  return (
+    <span className={'cb' + (on ? ' is-on' : '')} onClick={onClick}
+      style={dim ? { opacity: .3, pointerEvents: 'none' } : undefined}>
+      <svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M1 4l2.5 2.5L9 1" />
+      </svg>
+    </span>
+  );
+}
+
+function AutoTextarea({ value, onChange, placeholder, className }) {
+  const ref = useRef(null);
+  const fit = useCallback(() => {
+    const el = ref.current; if (!el) return;
+    el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px';
+  }, []);
+  useEffect(() => { fit(); }, [value, fit]);
+  useEffect(() => { if (document.fonts?.ready) document.fonts.ready.then(fit); }, [fit]);
+  return <textarea ref={ref} className={className} rows={1} value={value || ''} placeholder={placeholder} onChange={e => onChange(e.target.value)} onInput={fit} />;
+}
+
+let _pid = 0;
+function Picker({ value, options, grouped = false, placeholder = 'Select…', onSelect, variant = 'rich', panelWidth, align = 'left' }) {
+  const [open,  setOpen]  = useState(false);
+  const [pos,   setPos]   = useState(null);
+  const [query, setQuery] = useState('');
+  const ref      = useRef(null);
+  const inputRef = useRef(null);
+  const pid = useMemo(() => 'pop' + (++_pid), []);
+
+  /* Safely flatten all options */
+  const allFlat = useMemo(() => {
+    if (!options) return [];
+    if (grouped) return options.flatMap(g => Array.isArray(g?.items) ? g.items : []);
+    return Array.isArray(options) ? options : [];
+  }, [options, grouped]);
+
+  const sel = allFlat.find(o => o.value === value);
+
+  /* Filter items by query */
+  const filterItem = useCallback((o, q) =>
+    !q || o.nm.toLowerCase().includes(q) || (o.sb || '').toLowerCase().includes(q),
+    []
+  );
+
+  const q = query.trim().toLowerCase();
+
+  const visibleFlat = useMemo(() =>
+    allFlat.filter(o => filterItem(o, q)),
+    [allFlat, q, filterItem]
+  );
+
+  const visibleGrouped = useMemo(() => {
+    if (!grouped || !Array.isArray(options)) return [];
+    return options
+      .map(g => ({ ...g, items: (Array.isArray(g?.items) ? g.items : []).filter(o => filterItem(o, q)) }))
+      .filter(g => g.items.length > 0);
+  }, [options, grouped, q, filterItem]);
+
+  const openPicker = useCallback(() => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    const w = panelWidth || Math.max(r.width, variant === 'rich' ? 248 : 160);
+    let left = align === 'right' ? r.right - w : r.left;
+    left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
+    setPos({ left, top: r.bottom + 3, width: w, maxH: Math.min(340, window.innerHeight - r.bottom - 18) });
+    setQuery('');
+    setOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 10);
+  }, [panelWidth, variant, align]);
+
+  useEffect(() => {
+    if (!open) { setQuery(''); return; }
+    const onDown = (e) => {
+      if (ref.current?.contains(e.target)) return;
+      if (e.target?.closest?.('.' + pid)) return;
+      setOpen(false);
+    };
+    const onScroll = (e) => {
+      if (ref.current?.contains(e.target)) return;
+      if (e.target?.closest?.('.' + pid)) return;
+      setOpen(false);
+    };
+    document.addEventListener('pointerdown', onDown, true);
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onScroll);
+    return () => {
+      document.removeEventListener('pointerdown', onDown, true);
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [open, pid]);
+
+  const selectItem = useCallback((val) => {
+    onSelect(val); setOpen(false); setQuery('');
+  }, [onSelect]);
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') { setOpen(false); setQuery(''); }
+    if (e.key === 'Enter') {
+      const list = grouped ? visibleGrouped.flatMap(g => g.items) : visibleFlat;
+      if (list.length === 1) selectItem(list[0].value);
+    }
+  };
+
+  const Check = () => (
+    <svg className="pop-check" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2.5 7.5L6 11l5.5-7" />
+    </svg>
+  );
+
+  const renderItem = (o) => (
+    <div key={o.value} className={'pop-item' + (o.value === value ? ' on' : '')}
+      onMouseDown={e => { e.preventDefault(); selectItem(o.value); }}>
+      {variant === 'tag'
+        ? <WTag name={o.nm} tone={o.tone} />
+        : variant === 'bank'
+          ? <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: o.value === '__bene__' ? '#e91e8c' : bankColor(o.nm), flex: 'none' }} />
+              <div className="nm">{o.nm}</div>
+            </div>
+          : <div style={{ minWidth: 0, flex: 1 }}>
+              <div className="nm">{o.nm}</div>
+              {o.sb && <div className="sb">{o.sb}</div>}
+            </div>}
+      {o.value === value && <Check />}
+    </div>
+  );
+
+  const showDot = variant === 'bank' && sel && !open;
+
+  return (
+    <div ref={ref} className="gcell" style={{ position: 'relative' }}>
+      <div className={'pick' + (open ? ' open' : '')} onClick={() => { if (!open) openPicker(); }} style={{ cursor: 'text' }}>
+
+        {/* Bank dot (shown when closed and a value is selected) */}
+        {showDot && (
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: sel.value === '__bene__' ? '#e91e8c' : bankColor(sel.nm), flex: 'none', display: 'inline-block' }} />
+        )}
+
+        {/* Inline search input — takes over the cell when open */}
+        <input
+          ref={inputRef}
+          value={open ? query : ''}
+          onChange={e => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={() => { if (!open) openPicker(); }}
+          placeholder={open ? (sel ? sel.nm : placeholder) : ''}
+          style={{
+            position: open ? 'static' : 'absolute',
+            opacity: open ? 1 : 0,
+            pointerEvents: open ? 'auto' : 'none',
+            flex: 1, minWidth: 0, border: 'none', background: 'transparent',
+            outline: 'none', fontSize: 12.5, color: 'var(--ink)',
+            fontFamily: 'var(--font-ui)', padding: 0,
+          }}
+        />
+
+        {/* Static display when closed */}
+        {!open && (
+          variant === 'tag' && sel
+            ? <span style={{ flex: 1 }}><WTag name={sel.nm} tone={sel.tone} /></span>
+            : <span className="pl" style={{ flex: 1 }}>
+                {sel
+                  ? <><span className="nm">{sel.nm}</span>{sel.sb && <span className="sb">{sel.sb}</span>}</>
+                  : <span className="ph">{placeholder}</span>}
+              </span>
+        )}
+
+        <svg className="chev" width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
+          style={{ flexShrink: 0 }}
+          onClick={e => { e.stopPropagation(); open ? setOpen(false) : openPicker(); }}>
+          <path d="M1 1l4 4 4-4" />
+        </svg>
+      </div>
+
+      {open && pos && ReactDOM.createPortal(
+        <div className={'pop ' + pid}
+          style={{ left: pos.left, top: pos.top, width: pos.width, maxHeight: pos.maxH, padding: 5, overflow: 'auto' }}
+          onScroll={e => e.stopPropagation()}>
+          {grouped
+            ? visibleGrouped.length === 0
+              ? <div style={{ padding: '10px 12px', fontSize: 13, color: 'var(--ink-4)' }}>No results</div>
+              : visibleGrouped.map((g, gi) => (
+                  <React.Fragment key={g.groupLabel}>
+                    {gi > 0 && <div style={{ height: 1, background: 'var(--line-2)', margin: '4px 6px' }} />}
+                    <div className="pop-group-label">{g.groupLabel}</div>
+                    {g.items.map(renderItem)}
+                  </React.Fragment>
+                ))
+            : visibleFlat.length === 0
+              ? <div style={{ padding: '10px 12px', fontSize: 13, color: 'var(--ink-4)' }}>No results</div>
+              : visibleFlat.map(renderItem)}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+/* ── DEFAULT FALLBACK DATA ── */
+const DEFAULT_PARSED = {
+  wireTypes: [
+    { name: 'Domestic', tone: 'blue' }, { name: 'International', tone: 'amber' },
+    { name: 'Internal transfer', tone: 'slate' }, { name: 'FX / Multi-ccy', tone: 'violet' },
+  ],
+  accountsByGroup: {
+    'Citi':    [{ name: 'Citi Operating', bank: 'Citi', acct: '', aba: '' }],
+    'Valley':  [{ name: 'Valley Operating', bank: 'Valley', acct: '', aba: '' }],
+    'US Bank': [{ name: 'US Bank Account', bank: 'US Bank', acct: '', aba: '' }],
+    'Leumi':   [{ name: 'Leumi Account', bank: 'Leumi', acct: '', aba: '' }],
+    'EDB':     [{ name: 'EDB Account', bank: 'EDB', acct: '', aba: '' }],
+  },
+  beneficiaries: [],
+  allGroups: ['Citi', 'Valley', 'US Bank', 'Leumi', 'EDB', 'Portfolio Companies and third parties'],
+  allGroupItems: {
+    'Citi':    [{ name: 'Citi Operating', bank: 'Citi', acct: '', aba: '' }],
+    'Valley':  [{ name: 'Valley Operating', bank: 'Valley', acct: '', aba: '' }],
+    'US Bank': [{ name: 'US Bank Account', bank: 'US Bank', acct: '', aba: '' }],
+    'Leumi':   [{ name: 'Leumi Account', bank: 'Leumi', acct: '', aba: '' }],
+    'EDB':     [{ name: 'EDB Account', bank: 'EDB', acct: '', aba: '' }],
+    'Portfolio Companies and third parties': [],
+  },
+};
+
+/* ── CONFIRM MODAL ── */
+function ConfirmModal({ rows, totalStr, fmt, num, onCancel, onConfirm, submitting, columnMapping, destColumns }) {
+  const mappedCount = Object.values(columnMapping || {}).filter(Boolean).length;
+  const unmappedWarning = mappedCount === 0;
+
+  return (
+    <div className="modal-back" onClick={!submitting ? onCancel : undefined}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div style={{ padding: '24px 26px 18px', borderBottom: '1px solid var(--line)' }}>
+          <h2 style={{ margin: 0, fontSize: 19, fontWeight: 700, letterSpacing: -0.3 }}>Submit {rows.length} wire{rows.length > 1 ? 's' : ''}?</h2>
+          <p style={{ margin: '6px 0 0', fontSize: 13.5, color: 'var(--ink-2)' }}>These will be queued and synced to your Monday board. This action is logged.</p>
+        </div>
+
+        {unmappedWarning && (
+          <div style={{ margin: '12px 26px 0', padding: '10px 14px', background: 'var(--warn-bg)', border: '1px solid oklch(0.88 0.06 70)', borderRadius: 8, fontSize: 13, color: 'oklch(0.42 0.13 55)' }}>
+            ⚠ No columns are mapped in Mapping &amp; settings — the item will be created with only its name. Go to Mapping &amp; settings to configure column mapping before submitting.
+          </div>
+        )}
+        {!unmappedWarning && (
+          <div style={{ margin: '12px 26px 0', padding: '8px 14px', background: 'var(--accent-weak)', borderRadius: 8, fontSize: 12.5, color: 'var(--ink-2)' }}>
+            <strong style={{ color: 'var(--accent)' }}>{mappedCount} column{mappedCount !== 1 ? 's' : ''} mapped</strong>
+            {' — '}
+            {Object.entries(columnMapping || {}).filter(([,v]) => v).map(([field, colId]) => {
+              const col = (destColumns || []).find(c => c.id === colId);
+              return col ? col.title : colId;
+            }).join(', ')}
+          </div>
+        )}
+
+        <div style={{ maxHeight: 220, overflow: 'auto', padding: '6px 26px' }}>
+          {rows.map(r => (
+            <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: '1px solid var(--line-2)' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.creditAccount}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>{r.debitAccount} → {r.creditBank || r.creditAccount}</div>
+              </div>
+              <div className="mono" style={{ fontSize: 13.5, fontWeight: 600 }}>{r.currency} {fmt(num(r.amount))}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ padding: '16px 26px', display: 'flex', alignItems: 'center', gap: 12, background: 'var(--surface-2)', borderTop: '1px solid var(--line)' }}>
+          <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>Total</div>
+          <div className="mono" style={{ fontSize: 14.5, fontWeight: 700 }}>{totalStr}</div>
+          <div style={{ flex: 1 }} />
+          <button className="wr-btn wr-btn-ghost" onClick={onCancel} disabled={submitting}>Cancel</button>
+          <button className="wr-btn wr-btn-primary" onClick={onConfirm} disabled={submitting}>
+            {submitting
+              ? <><svg width="14" height="14" viewBox="0 0 14 14" style={{ animation: 'spin 0.7s linear infinite' }} fill="none" stroke="#fff" strokeWidth="2"><path d="M12 7a5 5 0 1 1-1.5-3.5M12 1v3h-3" strokeLinecap="round"/></svg>Submitting…</>
+              : 'Confirm & submit'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── WIRE GRID ── */
+function WireGrid({ parsed, columnMapping, destColumns, currencies, selectedAcctGroups, selectedBeneGroups }) {
+  const { wireTypes, accountsByGroup, beneficiaries, allGroups = [], allGroupItems = {} } = parsed;
+
+  /* Resolve which account groups are active */
+  const defaultAcctGroups = useMemo(() =>
+    allGroups.filter(g => ACCOUNT_GROUP_NAMES.some(n => g.toLowerCase() === n || g.toLowerCase().startsWith(n))),
+    [allGroups]
+  );
+  const activeAcctGroups = selectedAcctGroups ?? defaultAcctGroups;
+
+  /* Resolve which bene groups are active */
+  const defaultBeneGroups = useMemo(() =>
+    allGroups.filter(g => BENE_GROUP_KEYWORDS.some(k => g.toLowerCase().includes(k))),
+    [allGroups]
+  );
+  const activeBeneGroups = selectedBeneGroups ?? defaultBeneGroups;
+
+  /* Build accountsByGroup filtered to active groups */
+  const activeAccountsByGroup = useMemo(() => {
+    const result = {};
+    for (const grp of activeAcctGroups) {
+      const items = allGroupItems[grp] || accountsByGroup[grp];
+      if (items) result[grp] = items;
+    }
+    return result;
+  }, [activeAcctGroups, allGroupItems, accountsByGroup]);
+
+  /* Build beneficiaries filtered to active bene groups */
+  const activeBeneficiaries = useMemo(() => {
+    if (activeBeneGroups.length === 0) return beneficiaries; // fallback: show all
+    return activeBeneGroups.flatMap(g => (allGroupItems[g] || []).map(b => ({ ...b, groupTitle: g })));
+  }, [activeBeneGroups, allGroupItems, beneficiaries]);
+
+  const allAccounts = useMemo(() => Object.values(activeAccountsByGroup).flat(), [activeAccountsByGroup]);
+
+  /* Debit bank options = active group names + Company/Third Party */
+  const debitBankOpts = useMemo(() => {
+    const acctBanks = Object.keys(activeAccountsByGroup).map(g => ({ value: g, nm: g }));
+    return [...acctBanks, { value: '__bene__', nm: 'Company/Third Party' }];
+  }, [activeAccountsByGroup]);
+
+  /* Grouped debit account options */
+  const allDebitGroupedOpts = useMemo(() =>
+    Object.entries(activeAccountsByGroup).map(([grp, accs]) => ({
+      groupLabel: grp,
+      items: accs.map(a => ({ value: a.name, nm: a.name, sb: a.acct || undefined })),
+    })),
+    [activeAccountsByGroup]
+  );
+
+  /* Credit bank = same account groups + "Company/Third Party" */
+  const creditBankOpts = useMemo(() => {
+    const acctBanks = Object.keys(activeAccountsByGroup).map(g => ({ value: g, nm: g }));
+    return [...acctBanks, { value: '__bene__', nm: 'Company/Third Party' }];
+  }, [activeAccountsByGroup]);
+
+  /* Flat beneficiary opts */
+  const allBeneOpts = useMemo(() =>
+    activeBeneficiaries.map(b => ({ value: b.name, nm: b.name, sb: b.acct || undefined })),
+    [activeBeneficiaries]
+  );
+
+  const acctOf  = (name) => allAccounts.find(a => a.name === name) || {};
+  const beneOf  = (name) => activeBeneficiaries.find(b => b.name === name) || {};
+
+  const blank = () => ({
+    id: Math.random().toString(36).slice(2, 9),
+    wireType: '', valueDate: new Date().toISOString().slice(0, 10),
+    debitBank: '', debitAccount: '', creditBank: '', creditAccount: '',
+    currency: 'USD', amount: '', internalDetails: '', remarks: '', status: 'draft',
+  });
+
+  const [rows,      setRows]      = useState(() => [blank()]);
+  const [sel,       setSel]       = useState(() => new Set());
+  const [confirm,   setConfirm]   = useState(null);
+  const [submitting,setSubmitting]= useState(false);
+  const [toast,     setToast]     = useState('');
+  const [toastErr,  setToastErr]  = useState('');
+
+  /* Debit opts filtered by selected bank — __bene__ shows beneficiaries (wrapped for grouped picker) */
+  const debitOptsForRow = useCallback((debitBank) => {
+    if (!debitBank) return allDebitGroupedOpts;
+    if (debitBank === '__bene__') return [{ groupLabel: 'Company / Third Party', items: allBeneOpts }];
+    const g = allDebitGroupedOpts.find(g => g.groupLabel === debitBank);
+    return g ? [g] : allDebitGroupedOpts;
+  }, [allDebitGroupedOpts, allBeneOpts]);
+
+  /* Fix #2: Credit opts — '__bene__' or no bank shows beneficiaries; account group shows those accounts */
+  const creditOptsForRow = useCallback((creditBank) => {
+    if (!creditBank || creditBank === '__bene__') return allBeneOpts;
+    const g = allDebitGroupedOpts.find(g => g.groupLabel === creditBank);
+    return g ? g.items : allBeneOpts;  // g.items already have sb from allDebitGroupedOpts
+  }, [allBeneOpts, allDebitGroupedOpts]);
+
+  const ready = (r) => r.wireType && r.valueDate && r.debitAccount && r.creditAccount && r.currency && r.amount && r.status !== 'synced';
+  const num   = (s) => parseFloat(String(s).replace(/[^0-9.]/g, '')) || 0;
+  const fmt   = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const patch = (id, key, val) => setRows(rs => rs.map(r => {
+    if (r.id !== id) return r;
+    const next = { ...r, [key]: val };
+    if (key === 'debitBank') {
+      /* Clear account whenever bank changes — it won't belong to the new bank */
+      next.debitAccount = '';
+    }
+    if (key === 'debitAccount') {
+      /* Only auto-fill debitBank if not already set — use the group the account belongs to */
+      if (!next.debitBank) {
+        const grp = allDebitGroupedOpts.find(g => g.items.some(i => i.value === val));
+        if (grp) next.debitBank = grp.groupLabel;
+      }
+    }
+    if (key === 'creditBank') {
+      /* Clear credit account whenever bank changes */
+      next.creditAccount = '';
+    }
+    if (key === 'creditAccount') {
+      /* Don't auto-set bank from bene since credit bank = account groups now */
+    }
+    return next;
+  }));
+
+  const addRows   = (n) => setRows(rs => [...rs, ...Array.from({ length: n }, blank)]);
+  const dupRow    = (id) => setRows(rs => { const i = rs.findIndex(r => r.id === id); const c = { ...rs[i], id: blank().id, status: 'draft' }; const out = [...rs]; out.splice(i+1, 0, c); return out; });
+  const delRow    = (id) => { setRows(rs => rs.filter(r => r.id !== id)); setSel(s => { const n = new Set(s); n.delete(id); return n; }); };
+  const fmtAmount = (id, v) => { const n = num(v); if (n) patch(id, 'amount', fmt(n)); };
+
+  const toggle    = (id) => setSel(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const readyRows = rows.filter(ready);
+  const allOn     = readyRows.length > 0 && readyRows.every(r => sel.has(r.id));
+  const toggleAll = () => setSel(allOn ? new Set() : new Set(readyRows.map(r => r.id)));
+
+  const selRows = rows.filter(r => sel.has(r.id) && ready(r));
+  const totals  = {};
+  selRows.forEach(r => { totals[r.currency] = (totals[r.currency] || 0) + num(r.amount); });
+  const totalStr = Object.entries(totals).map(([c, v]) => `${c} ${fmt(v)}`).join('   ·   ');
+
+  const wtOpts  = wireTypes.map(t => ({ value: t.name, nm: t.name, tone: t.tone }));
+  const ccyOpts = (currencies || ['USD', 'EUR', 'GBP', 'CAD', 'ILS']).map(c => ({ value: c, nm: c }));
+
+  const submit = async () => {
+    setSubmitting(true);
+    try {
+      for (const row of selRows) await submitWireToMonday(row, columnMapping, destColumns);
+      const ids = new Set(selRows.map(r => r.id));
+      setRows(rs => rs.map(r => ids.has(r.id) ? { ...r, status: 'synced' } : r));
+      setConfirm(null); setSel(new Set());
+      setToast(`${ids.size} wire${ids.size > 1 ? 's' : ''} submitted · synced to Monday`);
+      setTimeout(() => setToast(''), 3800);
+    } catch (e) {
+      setConfirm(null);
+      console.error('Submit error:', e);
+      setToastErr('Submission failed: ' + e.message);
+      setTimeout(() => setToastErr(''), 10000);
+    } finally { setSubmitting(false); }
+  };
+
+  /* Debug: show mapped column types */
+  const [debugInfo, setDebugInfo] = useState('');
+  const showDebug = () => {
+    const lines = Object.entries(columnMapping).map(([field, colId]) => {
+      if (!colId) return `${field}: NOT MAPPED`;
+      const col = destColumns.find(c => c.id === colId);
+      if (!col) return `${field}: col ${colId} NOT FOUND`;
+      return `${field} → "${col.title}" type=${col.type}`;
+    });
+    setDebugInfo(lines.join('\n'));
+  };
+
+  const W = { cb: 36, num: 34, wt: 148, vd: 110, db: 118, da: 156, cb2: 118, ca: 160, cc: 90, amt: 114, det: 126, rem: 114, act: 56 };
+  const minW = Object.values(W).reduce((s, v) => s + v, 0);
+
+  return (
+    <React.Fragment>
+      <div className="app-toolbar">
+        <div>
+          <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: -0.4 }}>Wire batch</h1>
+          <div style={{ display: 'flex', gap: 8, marginTop: 7 }}>
+            <span className="wr-chip wr-chip-neutral">{rows.length} rows</span>
+            <span className="wr-chip wr-chip-blue">{readyRows.length} ready to submit</span>
+          </div>
+        </div>
+        <div style={{ flex: 1 }} />
+        <span style={{ fontSize: 12, color: 'var(--ink-4)', display: 'flex', alignItems: 'center', gap: 6, marginRight: 4 }}>
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3"><rect x="1.5" y="1.5" width="11" height="11" rx="1.5"/><path d="M1.5 5h11M5 5v7.5"/></svg>
+          Paste rows from Excel
+        </span>
+        <button className="wr-btn wr-btn-ghost" onClick={showDebug} style={{ fontSize: 12, padding: '6px 12px', color: 'var(--ink-3)' }}>⚙ Debug columns</button>
+        <button className="wr-btn wr-btn-ghost" onClick={() => addRows(5)}>+ 5 rows</button>
+        <button className="wr-btn wr-btn-ghost" onClick={() => addRows(1)} style={{ borderColor: 'var(--accent-line)', color: 'var(--accent)' }}>+ Add row</button>
+      </div>
+
+      <div className="grid-wrap">
+        <table className="g2" style={{ minWidth: minW }}>
+          <colgroup>
+            <col style={{ width: W.cb }} /><col style={{ width: W.num }} />
+            <col style={{ width: W.wt }} /><col style={{ width: W.vd }} />
+            <col style={{ width: W.db }} /><col style={{ width: W.da }} />
+            <col style={{ width: W.cb2 }} /><col style={{ width: W.ca }} />
+            <col style={{ width: W.cc }} /><col style={{ width: W.amt }} />
+            <col style={{ width: W.det }} /><col style={{ width: W.rem }} />
+            <col style={{ width: W.act }} />
+          </colgroup>
+          <thead>
+            <tr className="cols">
+              <th style={{ paddingLeft: 15 }}><Checkbox on={allOn} onClick={toggleAll} /></th>
+              <th style={{ textAlign: 'center', padding: '14px 4px' }}>#</th>
+              <th>Wire type</th><th>Value date</th>
+              <th className="gs">Debit bank</th><th>Debit account</th>
+              <th className="gs">Credit bank</th><th>Credit account</th>
+              <th className="gs">Ccy</th><th className="r">Amount</th>
+              <th className="gs">Internal details</th><th>Remarks</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => {
+              const synced  = r.status === 'synced';
+              const isReady = ready(r);
+              const dOpts   = debitOptsForRow(r.debitBank);
+              const cOpts   = creditOptsForRow(r.creditBank);
+              return (
+                <tr key={r.id} className={(sel.has(r.id) ? 'sel' : '') + (synced ? ' done' : '')}>
+                  <td style={{ paddingLeft: 15 }}>
+                    {synced
+                      ? <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--positive)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8.5L6.5 12 13 4.5" /></svg>
+                      : <Checkbox on={sel.has(r.id)} onClick={() => isReady && toggle(r.id)} dim={!isReady} />}
+                  </td>
+                  <td style={{ textAlign: 'center', color: 'var(--ink-4)', fontSize: 12 }}>{i + 1}</td>
+                  <td><Picker variant="tag" value={r.wireType} options={wtOpts} placeholder="Type…" onSelect={v => patch(r.id, 'wireType', v)} /></td>
+                  <td className="gcell"><input className="gin date" type="date" value={r.valueDate} onChange={e => patch(r.id, 'valueDate', e.target.value)} /></td>
+
+                  {/* Debit bank — shows bank groups with color dot, drives account filter */}
+                  <td className="gs">
+                    <Picker variant="bank" value={r.debitBank} options={debitBankOpts} placeholder="Bank…" panelWidth={170} onSelect={v => patch(r.id, 'debitBank', v)} />
+                  </td>
+                  {/* Debit account — grouped, filtered by debitBank */}
+                  <td>
+                    <Picker value={r.debitAccount} options={dOpts} grouped={true} placeholder="Account…" panelWidth={300} onSelect={v => patch(r.id, 'debitAccount', v)} />
+                  </td>
+
+                  {/* Credit bank — same options as debit bank + Company/Third Party */}
+                  <td className="gs">
+                    <Picker variant="bank" value={r.creditBank} options={creditBankOpts} placeholder="Bank…" panelWidth={200} onSelect={v => patch(r.id, 'creditBank', v)} />
+                  </td>
+                  {/* Credit account — filtered by creditBank */}
+                  <td>
+                    <Picker value={r.creditAccount} options={cOpts} placeholder="Beneficiary…" panelWidth={320} onSelect={v => patch(r.id, 'creditAccount', v)} />
+                  </td>
+
+                  <td className="gs"><Picker variant="plain" value={r.currency} options={ccyOpts} placeholder="—" panelWidth={120} onSelect={v => patch(r.id, 'currency', v)} /></td>
+                  <td className="gcell"><input className="gin amt" value={r.amount} placeholder="0.00" onChange={e => patch(r.id, 'amount', e.target.value)} onBlur={e => fmtAmount(r.id, e.target.value)} /></td>
+                  <td className="gs gcell"><AutoTextarea className="gin" value={r.internalDetails} placeholder="—" onChange={v => patch(r.id, 'internalDetails', v)} /></td>
+                  <td className="gcell"><AutoTextarea className="gin" value={r.remarks} placeholder="Add reference…" onChange={v => patch(r.id, 'remarks', v)} /></td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
+                      <button className="icon-btn" title="Duplicate row" onClick={() => dupRow(r.id)}>
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3"><rect x="4.5" y="4.5" width="8" height="8" rx="1.5"/><path d="M9.5 4.5V3a1.5 1.5 0 0 0-1.5-1.5H3A1.5 1.5 0 0 0 1.5 3v5A1.5 1.5 0 0 0 3 9.5h1.5"/></svg>
+                      </button>
+                      <button className="icon-btn danger" title="Delete row" onClick={() => delRow(r.id)}>
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"><path d="M2.5 3.5h9M5.5 3.5V2.5h3v1M3.5 3.5l.5 8a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1l.5-8" /></svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <button className="wr-btn wr-btn-ghost" onClick={() => addRows(1)} style={{ margin: '12px 0 26px', borderStyle: 'dashed', color: 'var(--ink-2)' }}>+ Add another wire</button>
+      </div>
+
+      <div className="app-foot">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 14, fontWeight: 600 }}>{selRows.length} selected</span>
+          {selRows.length > 0 && <><span style={{ width: 1, height: 18, background: 'var(--line)' }} /><span className="mono" style={{ fontSize: 14, color: 'var(--ink-2)' }}>{totalStr}</span></>}
+        </div>
+        <div style={{ flex: 1 }} />
+        <span style={{ fontSize: 12, color: 'var(--ink-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3"><path d="M7 1l5 2v3.2C12 9.5 9.8 12 7 13 4.2 12 2 9.5 2 6.2V3l5-2z"/></svg>
+          Logged to audit trail
+        </span>
+        <button className="wr-btn wr-btn-primary" disabled={selRows.length === 0} onClick={() => setConfirm({})}
+          style={selRows.length === 0 ? { opacity: .4, cursor: 'not-allowed' } : undefined}>
+          Submit {selRows.length || ''} wire{selRows.length === 1 ? '' : 's'}
+        </button>
+      </div>
+
+      {debugInfo && (
+        <div className="modal-back" onClick={() => setDebugInfo('')}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 640 }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Column mapping debug</h2>
+              <button className="icon-btn" onClick={() => setDebugInfo('')}>✕</button>
+            </div>
+            <pre style={{ padding: '16px 24px', margin: 0, fontSize: 12.5, fontFamily: 'var(--font-mono)', lineHeight: 1.7, whiteSpace: 'pre-wrap', overflowY: 'auto', maxHeight: 400 }}>{debugInfo}</pre>
+          </div>
+        </div>
+      )}
+      {confirm && <ConfirmModal rows={selRows} totalStr={totalStr} fmt={fmt} num={num} onCancel={() => !submitting && setConfirm(null)} onConfirm={submit} submitting={submitting} columnMapping={columnMapping} destColumns={destColumns} />}
+      {toast    && <div className="toast"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8.5L6.5 12 13 4.5" /></svg>{toast}</div>}
+      {toastErr && <div className="toast" style={{ background: 'oklch(0.45 0.18 25)', maxWidth: 520, whiteSpace: 'normal', lineHeight: 1.4 }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" style={{flexShrink:0}}><path d="M8 5v4M8 11v1"/><circle cx="8" cy="8" r="6.5"/></svg>{toastErr}</div>}
+    </React.Fragment>
+  );
+}
+
+/* ── MAPPING & SETTINGS ── */
+function WireMapping({ parsed, sourceBoard, destBoard, columnMapping, setColumnMapping, workspace, onResync,
+                       currencies, selectedAcctGroups, selectedBeneGroups, onUpdateDraft, onDiscard, hasDraft, onSave,
+                       saving, saveError }) {
+  const { wireTypes, accountsByGroup, beneficiaries, allGroups = [], allGroupItems = {} } = parsed;
+
+  /* Default groups */
+  const defaultAcctGroups = useMemo(() =>
+    allGroups.filter(g => ACCOUNT_GROUP_NAMES.some(n => g.toLowerCase() === n || g.toLowerCase().startsWith(n))),
+    [allGroups]
+  );
+  const defaultBeneGroups = useMemo(() =>
+    allGroups.filter(g => BENE_GROUP_KEYWORDS.some(k => g.toLowerCase().includes(k))),
+    [allGroups]
+  );
+
+  const activeAcctGroups = selectedAcctGroups ?? defaultAcctGroups;
+  const activeBeneGroups = selectedBeneGroups ?? defaultBeneGroups;
+
+  /* Local draft currencies for the add-input */
+  const [newCcy, setNewCcy] = useState('');
+  const addCcy = () => {
+    const c = newCcy.trim().toUpperCase();
+    if (c && /^[A-Z]{3}$/.test(c) && !currencies.includes(c)) {
+      onUpdateDraft('currencies', [...currencies, c]);
+      setNewCcy('');
+    }
+  };
+  const removeCcy = (c) => onUpdateDraft('currencies', currencies.filter(x => x !== c));
+
+  const toggleAcctGroup = (grp) => {
+    const current = [...activeAcctGroups];
+    const next = current.includes(grp) ? current.filter(g => g !== grp) : [...current, grp];
+    onUpdateDraft('acctGroups', next);
+  };
+  const toggleBeneGroup = (grp) => {
+    const current = [...activeBeneGroups];
+    const next = current.includes(grp) ? current.filter(g => g !== grp) : [...current, grp];
+    onUpdateDraft('beneGroups', next);
+  };
+
+  /* Compute display data for tables */
+  const acctFromSelected = useMemo(() =>
+    activeAcctGroups.flatMap(g => (allGroupItems[g] || accountsByGroup[g] || []).map(a => ({ ...a, groupTitle: g }))),
+    [activeAcctGroups, allGroupItems, accountsByGroup]
+  );
+  const beneFromSelected = useMemo(() =>
+    activeBeneGroups.length > 0
+      ? activeBeneGroups.flatMap(g => (allGroupItems[g] || []).map(b => ({ ...b, groupTitle: g })))
+      : beneficiaries,
+    [activeBeneGroups, allGroupItems, beneficiaries]
+  );
+
+  const allAccounts = useMemo(() => Object.entries(accountsByGroup).flatMap(([grp, accs]) => accs.map(a => ({ ...a, groupTitle: grp }))), [accountsByGroup]);
+
+  const [syncing,    setSyncing]    = useState('');
+  const [lastSynced, setLastSynced] = useState({ acct: 'on load', bene: 'on load' });
+
+  const resync = (key) => {
+    setSyncing(key);
+    onResync(() => { setSyncing(''); setLastSynced(s => ({ ...s, [key]: 'just now' })); });
+  };
+
+  const BankCell = ({ bank }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink-2)', minWidth: 0 }}>
+      <span style={{ width: 8, height: 8, borderRadius: '50%', background: bankColor(bank), flex: 'none' }} />
+      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bank || '—'}</span>
+    </div>
+  );
+
+  const FORM_FIELDS = [
+    { key: 'wireType',        label: 'Wire type' },
+    { key: 'valueDate',       label: 'Value date' },
+    { key: 'debitAccount',    label: 'Debit account' },
+    { key: 'debitBank',       label: 'Debit bank' },
+    { key: 'creditAccount',   label: 'Credit account' },
+    { key: 'creditBank',      label: 'Credit bank' },
+    { key: 'currency',        label: 'Currency' },
+    { key: 'amount',          label: 'Amount' },
+    { key: 'internalDetails', label: 'Internal details' },
+    { key: 'remarks',         label: 'Remarks' },
+  ];
+  const destCols = (destBoard?.columns || []).filter(c => c.id !== 'name');
+
+  const [openSections, setOpenSections] = useState({ mapping: false, acct: false, bene: false, ccy: false });
+  const toggleSection = (key) => setOpenSections(s => ({ ...s, [key]: !s[key] }));
+
+  const SyncHeader = ({ title, subtitle, count, syncKey, noSync }) => {
+    const isOpen = openSections[syncKey];
+    return (
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '14px 20px', borderBottom: isOpen ? '1px solid var(--line)' : 'none', cursor: 'pointer', userSelect: 'none' }}
+        onClick={() => toggleSection(syncKey)}>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
+              style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform .15s', color: 'var(--ink-3)', flexShrink: 0 }}>
+              <path d="M5 3l4 4-4 4" />
+            </svg>
+            <h3 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, letterSpacing: -0.2 }}>{title}</h3>
+            {count !== undefined && <span style={{ fontSize: 12, color: 'var(--ink-4)', fontWeight: 400 }}>{count} items</span>}
+          </div>
+          {subtitle && isOpen && <p style={{ margin: '4px 0 0 22px', fontSize: 12.5, color: 'var(--ink-3)' }}>{subtitle}</p>}
+          {isOpen && !noSync && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5, marginLeft: 22, fontSize: 12.5, color: 'var(--ink-3)' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--blue)', display: 'inline-block' }} />
+                Monday · <strong style={{ color: 'var(--ink-2)', fontWeight: 600 }}>{sourceBoard?.name || 'Source Board'}</strong>
+              </span>
+            </div>
+          )}
+        </div>
+        {isOpen && !noSync && (
+          <div style={{ textAlign: 'right', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+            <button className="wr-btn wr-btn-ghost" style={{ padding: '6px 12px', fontSize: 12.5 }} onClick={() => resync(syncKey)} disabled={syncing === syncKey}>
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"
+                style={syncing === syncKey ? { animation: 'spin 0.9s linear infinite' } : undefined}>
+                <path d="M12.5 7a5.5 5.5 0 1 1-1.6-3.9M12.5 1v3h-3" />
+              </svg>
+              {syncing === syncKey ? 'Syncing…' : 'Re-sync'}
+            </button>
+            <div style={{ fontSize: 11, color: 'var(--ink-4)', marginTop: 4 }}>Synced {lastSynced[syncKey]}</div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '26px 26px 40px', flex: 1, width: '100%' }}>
+        <div style={{ marginBottom: 8 }}>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: -0.4 }}>Mapping &amp; settings</h1>
+          <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--ink-2)' }}>Owner controls — the option lists below populate every dropdown in the wire grid. They're kept in sync with your Monday boards.</p>
+        </div>
+
+        {/* Monday connection card */}
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', margin: '20px 0 24px' }}>
+          <div style={{ width: 38, height: 38, borderRadius: 9, background: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+            <div style={{ display: 'flex', gap: 3 }}>
+              <span style={{ width: 6, height: 16, borderRadius: 3, background: '#e8533f' }} />
+              <span style={{ width: 6, height: 16, borderRadius: 3, background: '#fdab3d' }} />
+              <span style={{ width: 6, height: 16, borderRadius: 3, background: '#00c875' }} />
+            </div>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14.5, fontWeight: 600 }}>Monday workspace connected</div>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{workspace?.account?.name || 'Viola Credit'} · {workspace?.email || ''}</div>
+          </div>
+          <span className="wr-chip wr-chip-green"><span className="wr-dot" style={{ background: 'var(--positive)' }} />Active</span>
+          <button className="wr-btn wr-btn-ghost" style={{ padding: '8px 14px', fontSize: 13 }}>Manage connection</button>
+        </div>
+
+        {/* Column mapping */}
+        <div className="card" style={{ marginBottom: 24 }}>
+          <SyncHeader title="Column mapping" count={undefined} syncKey="mapping" noSync={true}
+            subtitle="Map each wire form field to a column in the destination board." />
+          {openSections.mapping && (
+            <table className="col-map-table">
+              <thead><tr><th style={{ width: '38%' }}>Wire form field</th><th>Destination Monday column ({destBoard ? destBoard.name : `Board ${DEST_BOARD_ID}`})</th></tr></thead>
+              <tbody>
+                {FORM_FIELDS.map(f => (
+                  <tr key={f.key}>
+                    <td style={{ fontSize: 13.5, fontWeight: 500 }}>{f.label}</td>
+                    <td>
+                      <select className="col-map-select" value={columnMapping[f.key] || ''} onChange={e => setColumnMapping({ ...columnMapping, [f.key]: e.target.value })}>
+                        <option value="">— not mapped —</option>
+                        {destCols.map(c => <option key={c.id} value={c.id}>{c.title} ({c.type})</option>)}
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Accounts — all internal account groups */}
+        <div className="card" style={{ marginBottom: 24 }}>
+          <SyncHeader
+            title="Accounts"
+            subtitle={activeAcctGroups.length ? `Groups: ${activeAcctGroups.join(' · ')}` : 'No groups selected'}
+            count={acctFromSelected.length}
+            syncKey="acct"
+          />
+          {openSections.acct && (
+            <>
+              {/* Group selector */}
+              <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--line-2)', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', letterSpacing: '0.04em', textTransform: 'uppercase', marginRight: 4 }}>Include groups:</span>
+                {allGroups.length === 0
+                  ? <span style={{ fontSize: 13, color: 'var(--ink-4)' }}>No groups loaded from Monday yet</span>
+                  : allGroups.map(g => {
+                    const active = activeAcctGroups.includes(g);
+                    return (
+                      <button key={g} onClick={() => toggleAcctGroup(g)}
+                        style={{ fontFamily: 'var(--font-ui)', fontSize: 12.5, fontWeight: active ? 600 : 400, padding: '4px 11px', borderRadius: 100, border: '1.5px solid', cursor: 'pointer', transition: 'all .12s',
+                          background: active ? 'var(--accent-weak)' : 'var(--surface)', color: active ? 'var(--accent)' : 'var(--ink-3)', borderColor: active ? 'var(--accent-line)' : 'var(--line)' }}>
+                        {g}
+                      </button>
+                    );
+                  })}
+              </div>
+              {/* Equal-column table header */}
+              <div className="opt-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)', fontSize: 10.5, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--ink-3)', background: 'var(--surface-2)' }}>
+                <div>Account name</div><div>Group / Bank</div><div>Account no.</div>
+              </div>
+              {acctFromSelected.length === 0
+                ? <div style={{ padding: '18px 16px', color: 'var(--ink-4)', fontSize: 13 }}>No accounts in the selected groups.</div>
+                : acctFromSelected.map((a, i) => (
+                    <div key={i} className="opt-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 500 }}>{a.name}</div>
+                      <BankCell bank={a.groupTitle} />
+                      <div className="mono" style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>{a.acct || '—'}</div>
+                    </div>
+                  ))}
+            </>
+          )}
+        </div>
+
+        {/* Portfolio Companies and Third Parties */}
+        <div className="card" style={{ marginBottom: 24 }}>
+          <SyncHeader
+            title="Portfolio Companies and Third Parties"
+            subtitle={activeBeneGroups.length ? `Groups: ${activeBeneGroups.join(' · ')}` : 'No groups selected'}
+            count={beneFromSelected.length}
+            syncKey="bene"
+          />
+          {openSections.bene && (
+            <>
+              {/* Group selector */}
+              <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--line-2)', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', letterSpacing: '0.04em', textTransform: 'uppercase', marginRight: 4 }}>Include groups:</span>
+                {allGroups.length === 0
+                  ? <span style={{ fontSize: 13, color: 'var(--ink-4)' }}>No groups loaded from Monday yet</span>
+                  : allGroups.map(g => {
+                    const active = activeBeneGroups.includes(g);
+                    return (
+                      <button key={g} onClick={() => toggleBeneGroup(g)}
+                        style={{ fontFamily: 'var(--font-ui)', fontSize: 12.5, fontWeight: active ? 600 : 400, padding: '4px 11px', borderRadius: 100, border: '1.5px solid', cursor: 'pointer', transition: 'all .12s',
+                          background: active ? 'var(--accent-weak)' : 'var(--surface)', color: active ? 'var(--accent)' : 'var(--ink-3)', borderColor: active ? 'var(--accent-line)' : 'var(--line)' }}>
+                        {g}
+                      </button>
+                    );
+                  })}
+              </div>
+              <div className="opt-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)', fontSize: 10.5, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--ink-3)', background: 'var(--surface-2)' }}>
+                <div>Legal name</div><div>Bank</div><div>Account no.</div>
+              </div>
+              {beneFromSelected.length === 0
+                ? <div style={{ padding: '18px 16px', color: 'var(--ink-4)', fontSize: 13 }}>No beneficiaries in the selected groups.</div>
+                : beneFromSelected.map((b, i) => (
+                    <div key={i} className="opt-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 500 }}>{b.name}</div>
+                      <BankCell bank={b.bank || '—'} />
+                      <div className="mono" style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>{b.acct || '—'}</div>
+                    </div>
+                  ))}
+            </>
+          )}
+        </div>
+
+        {/* Currencies — manual, editable */}
+        <div className="card" style={{ marginBottom: 24 }}>
+          <SyncHeader title="Currencies" count={currencies.length} syncKey="ccy" noSync={true}
+            subtitle="Managed manually — not synced from Monday." />
+          {openSections.ccy && (
+            <div style={{ padding: '16px 20px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 14 }}>
+                {currencies.map(c => (
+                  <span key={c} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, padding: '5px 8px 5px 12px', borderRadius: 100, background: 'var(--surface-2)', border: '1px solid var(--line)', color: 'var(--ink-2)' }}>
+                    {c}
+                    <button onClick={() => removeCcy(c)} className="icon-btn" style={{ width: 18, height: 18 }} title={`Remove ${c}`}>
+                      <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M2 2l6 6M8 2l-6 6" /></svg>
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  value={newCcy} onChange={e => setNewCcy(e.target.value.toUpperCase().slice(0, 3))}
+                  onKeyDown={e => e.key === 'Enter' && addCcy()}
+                  placeholder="ISO code e.g. JPY"
+                  maxLength={3}
+                  style={{ fontFamily: 'var(--font-mono)', fontSize: 13, width: 130, height: 34, padding: '0 10px', border: '1px solid var(--line)', borderRadius: 'var(--r-sm)', background: 'var(--surface)', color: 'var(--ink)', outline: 'none' }}
+                  onFocus={e => e.target.style.borderColor = 'var(--blue-mid)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--line)'}
+                />
+                <button className="wr-btn wr-btn-ghost" style={{ padding: '7px 14px', fontSize: 13, height: 34 }} onClick={addCcy}>+ Add</button>
+              </div>
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* Sticky Save footer */}
+      <div style={{ position: 'sticky', bottom: 0, background: 'var(--surface)', borderTop: hasDraft ? '1px solid var(--accent-line)' : '1px solid var(--line)', padding: '14px 26px', display: 'flex', alignItems: 'center', gap: 16, zIndex: 10 }}>
+        <div style={{ flex: 1 }}>
+          {saveError
+            ? <span style={{ fontSize: 13, color: 'var(--warn)', fontWeight: 500 }}>⚠ {saveError}</span>
+            : saving
+              ? <span style={{ fontSize: 13, color: 'var(--ink-3)', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" style={{ animation: 'spin 0.7s linear infinite', flexShrink: 0 }} fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 7a5 5 0 1 1-1.5-3.5M12 1v3h-3" strokeLinecap="round"/></svg>
+                  Saving to Monday…
+                </span>
+              : hasDraft
+                ? <span style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="7" cy="7" r="5.5"/><path d="M7 4.5v3l1.5 1.5"/></svg>
+                    Unsaved changes — click Save to sync to Monday
+                  </span>
+                : <span style={{ fontSize: 13, color: 'var(--positive)', display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 7.5L5.5 11 12 4"/></svg>
+                    Settings saved to Monday — shared with all users
+                  </span>}
+        </div>
+        <button className="wr-btn wr-btn-ghost" disabled={!hasDraft || saving}
+          style={{ opacity: hasDraft && !saving ? 1 : 0.4 }}
+          onClick={onDiscard}>
+          Discard
+        </button>
+        <button className="wr-btn wr-btn-primary" disabled={!hasDraft || saving}
+          style={{ opacity: hasDraft && !saving ? 1 : 0.5, cursor: hasDraft && !saving ? 'pointer' : 'not-allowed' }}
+          onClick={onSave}>
+          {saving
+            ? <><svg width="14" height="14" viewBox="0 0 14 14" style={{ animation: 'spin 0.7s linear infinite' }} fill="none" stroke="#fff" strokeWidth="2"><path d="M12 7a5 5 0 1 1-1.5-3.5M12 1v3h-3" strokeLinecap="round"/></svg>Saving…</>
+            : <><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 7.5L5.5 11 12 4"/></svg>Save changes</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── CONFIG STORAGE (Monday source board + localStorage cache) ──
+   Stores app settings as a JSON blob in a text column on a dedicated
+   "App Config" item in a hidden group on the source board.
+   localStorage is used as a fast local cache / offline fallback.
+*/
+const SETTINGS_KEY     = 'vc_wire_settings_v1';
+const CONFIG_GROUP     = 'App Config';       // group title on source board
+const CONFIG_ITEM_NAME = 'wire_requests_cfg'; // item name
+
+function loadSettingsCache() {
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); } catch (_) { return null; }
+}
+function cacheSettings(s) {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch (_) {}
+}
+
+/* Find the config item on the source board — returns {itemId, columnId} or null */
+async function findConfigItem(board) {
+  const groups  = board?.groups || [];
+  const items   = board?.items_page?.items || [];
+  const cfgGrp  = groups.find(g => g.title === CONFIG_GROUP);
+  if (!cfgGrp) return null;
+  const cfgItem = items.find(i => i.group?.title === CONFIG_GROUP && i.name === CONFIG_ITEM_NAME);
+  if (!cfgItem) return null;
+  // Find a text column that holds config — look for column titled "Config" or use first text column
+  const textCv = cfgItem.column_values?.find(cv =>
+    cv.column?.type === 'text' || cv.column?.type === 'long_text'
+  );
+  if (!textCv) return null;
+  return { itemId: cfgItem.id, columnId: textCv.column.id, raw: textCv.text || '' };
+}
+
+/* Create the config group + item + fill in text column on source board */
+async function createConfigItem() {
+  // 1. Create group
+  const grpMut = `mutation($bId:ID!,$gTitle:String!){create_group(board_id:$bId,group_name:$gTitle){id}}`;
+  const grpD   = await mondayQuery(grpMut, { bId: SOURCE_BOARD_ID, gTitle: CONFIG_GROUP });
+  const groupId = grpD?.create_group?.id;
+  if (!groupId) throw new Error('Could not create config group on source board');
+
+  // 2. Create item in that group
+  const itemMut = `mutation($bId:ID!,$gId:String!,$nm:String!){create_item(board_id:$bId,group_id:$gId,item_name:$nm){id column_values{id text column{id title type}}}}`;
+  const itemD   = await mondayQuery(itemMut, { bId: SOURCE_BOARD_ID, gId: groupId, nm: CONFIG_ITEM_NAME });
+  const item    = itemD?.create_item;
+  if (!item) throw new Error('Could not create config item');
+
+  // 3. Find its first text column
+  const textCv = item.column_values?.find(cv =>
+    cv.column?.type === 'text' || cv.column?.type === 'long_text'
+  );
+  return { itemId: item.id, columnId: textCv?.column?.id || null, raw: '' };
+}
+
+/* Load settings from Monday source board; falls back to localStorage cache */
+async function loadSettingsFromMonday(board) {
+  try {
+    const cfg = await findConfigItem(board);
+    if (!cfg || !cfg.raw) return null;
+    const parsed = JSON.parse(cfg.raw);
+    cacheSettings(parsed); // update local cache
+    return parsed;
+  } catch (e) {
+    console.warn('Could not load config from Monday:', e.message);
+    return null;
+  }
+}
+
+/* Save settings to Monday source board + localStorage */
+async function saveSettingsToMonday(settings) {
+  cacheSettings(settings); // always update local cache immediately
+  try {
+    // Re-fetch the board to get current state
+    const board = await fetchSourceBoardFull();
+    let cfg = await findConfigItem(board);
+    if (!cfg) {
+      // First save — create the config group/item
+      cfg = await createConfigItem();
+    }
+    if (!cfg.columnId) {
+      console.warn('No text column found on config item — settings saved to local cache only');
+      return;
+    }
+    const jsonStr = JSON.stringify(settings);
+    const mut = `mutation($bId:ID!,$itemId:ID!,$colId:String!,$val:String!){change_simple_column_value(board_id:$bId,item_id:$itemId,column_id:$colId,value:$val){id}}`;
+    await mondayQuery(mut, { bId: SOURCE_BOARD_ID, itemId: cfg.itemId, colId: cfg.columnId, val: jsonStr });
+    console.log('Settings saved to Monday source board.');
+  } catch (e) {
+    console.warn('Could not save config to Monday (saved to local cache only):', e.message);
+    throw e; // re-throw so the UI can show a warning
+  }
+}
+
+function App() {
+  const [tab,           setTab]           = useState('requests');
+  const [loading,       setLoading]       = useState(true);
+  const [loadError,     setLoadError]     = useState(null);
+  const [parsed,        setParsed]        = useState(DEFAULT_PARSED);
+  const [sourceBoard,   setSourceBoard]   = useState(null);
+  const [destBoard,     setDestBoard]     = useState(null);
+  const [workspace,     setWorkspace]     = useState(null);
+  const [saving,        setSaving]        = useState(false);
+  const [saveError,     setSaveError]     = useState('');
+
+  /* ── Live settings — seeded from localStorage cache on first render ── */
+  const cached = useMemo(() => loadSettingsCache(), []);
+  const [columnMapping,       setColumnMapping]       = useState(cached?.columnMapping       || {});
+  const [currencies,          setCurrencies]          = useState(cached?.currencies          || ['USD', 'EUR', 'GBP', 'CAD', 'ILS']);
+  const [selectedAcctGroups,  setSelectedAcctGroups]  = useState(cached?.selectedAcctGroups  || null);
+  const [selectedBeneGroups,  setSelectedBeneGroups]  = useState(cached?.selectedBeneGroups  || null);
+  /* ── Draft state (what the Mapping page edits before Save) ── */
+  const [draftColumnMapping,      setDraftColumnMapping]      = useState(null);
+  const [draftCurrencies,         setDraftCurrencies]         = useState(null);
+  const [draftSelectedAcctGroups, setDraftSelectedAcctGroups] = useState(null);
+  const [draftSelectedBeneGroups, setDraftSelectedBeneGroups] = useState(null);
+  const [hasDraft, setHasDraft] = useState(false);
+
+  /* Commit draft → live state → Monday + localStorage */
+  const commitDraft = async () => {
+    const next = {
+      columnMapping:      draftColumnMapping      ?? columnMapping,
+      currencies:         draftCurrencies         ?? currencies,
+      selectedAcctGroups: draftSelectedAcctGroups ?? selectedAcctGroups,
+      selectedBeneGroups: draftSelectedBeneGroups ?? selectedBeneGroups,
+    };
+    setColumnMapping(next.columnMapping);
+    setCurrencies(next.currencies);
+    setSelectedAcctGroups(next.selectedAcctGroups);
+    setSelectedBeneGroups(next.selectedBeneGroups);
+    setDraftColumnMapping(null);
+    setDraftCurrencies(null);
+    setDraftSelectedAcctGroups(null);
+    setDraftSelectedBeneGroups(null);
+    setHasDraft(false);
+    setSaving(true);
+    setSaveError('');
+    try {
+      await saveSettingsToMonday(next);
+    } catch (e) {
+      setSaveError('Saved locally but could not reach Monday: ' + e.message);
+      setTimeout(() => setSaveError(''), 8000);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateDraft = (key, val) => {
+    if (key === 'columnMapping') setDraftColumnMapping(val);
+    if (key === 'currencies')    setDraftCurrencies(val);
+    if (key === 'acctGroups')    setDraftSelectedAcctGroups(val);
+    if (key === 'beneGroups')    setDraftSelectedBeneGroups(val);
+    if (val !== null) setHasDraft(true);
+  };
+
+  const discardDraft = () => {
+    setDraftColumnMapping(null);
+    setDraftCurrencies(null);
+    setDraftSelectedAcctGroups(null);
+    setDraftSelectedBeneGroups(null);
+    setHasDraft(false);
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [src, dst, ws] = await Promise.all([
+          fetchSourceBoardFull().catch(e => { console.warn('Source:', e); return null; }),
+          fetchDestBoard().catch(e => { console.warn('Dest:', e); return null; }),
+          fetchWorkspace().catch(e => null),
+        ]);
+        if (src) {
+          setSourceBoard(src);
+          const p = parseSourceBoard(src);
+          if (p) setParsed(p);
+          // Load settings from Monday (authoritative); overrides local cache
+          const mondaySettings = await loadSettingsFromMonday(src);
+          if (mondaySettings) {
+            if (mondaySettings.columnMapping)      setColumnMapping(mondaySettings.columnMapping);
+            if (mondaySettings.currencies)         setCurrencies(mondaySettings.currencies);
+            if (mondaySettings.selectedAcctGroups !== undefined) setSelectedAcctGroups(mondaySettings.selectedAcctGroups);
+            if (mondaySettings.selectedBeneGroups !== undefined) setSelectedBeneGroups(mondaySettings.selectedBeneGroups);
+          }
+        }
+        if (dst) {
+          setDestBoard(dst);
+          // Only auto-map if nothing was loaded from Monday or cache
+          const hasSavedMapping = cached?.columnMapping && Object.keys(cached.columnMapping).length > 0;
+          if (!hasSavedMapping) {
+            const autoMap = {};
+            const fieldHints = [
+              { key: 'wireType',        hints: ['wire type', 'type'] },
+              { key: 'valueDate',       hints: ['value date', 'date'] },
+              { key: 'debitAccount',    hints: ['debit account', 'debit', 'from account'] },
+              { key: 'debitBank',       hints: ['debit bank', 'from bank'] },
+              { key: 'creditAccount',   hints: ['credit account', 'credit', 'beneficiary', 'to account'] },
+              { key: 'creditBank',      hints: ['credit bank', 'to bank'] },
+              { key: 'currency',        hints: ['currency', 'ccy'] },
+              { key: 'amount',          hints: ['amount', 'sum'] },
+              { key: 'internalDetails', hints: ['internal details', 'internal', 'memo', 'details'] },
+              { key: 'remarks',         hints: ['remarks', 'notes', 'reference'] },
+            ];
+            for (const f of fieldHints) {
+              const col = (dst.columns || []).find(c => f.hints.some(h => c.title.toLowerCase().includes(h)));
+              if (col) autoMap[f.key] = col.id;
+            }
+            if (Object.keys(autoMap).length) setColumnMapping(autoMap);
+          }
+        }
+        if (ws) setWorkspace(ws);
+      } catch (e) { setLoadError(e.message); }
+      finally { setLoading(false); }
+    })();
+  }, []);
+
+  const handleResync = useCallback((done) => {
+    fetchSourceBoardFull()
+      .then(src => { if (src) { setSourceBoard(src); const p = parseSourceBoard(src); if (p) setParsed(p); } done(); })
+      .catch(() => done());
+  }, []);
+
+  /* Inject logo SVG with controlled height */
+  const logoHtml = LOGO_RAW.replace('<svg ', '<svg height="30" style="width:auto;display:block;flex-shrink:0;" ');
+
+  /* What the mapping page currently shows (draft values if pending, else live) */
+  const mappingColumnMapping      = draftColumnMapping      ?? columnMapping;
+  const mappingCurrencies         = draftCurrencies         ?? currencies;
+  const mappingSelectedAcctGroups = draftSelectedAcctGroups ?? selectedAcctGroups;
+  const mappingSelectedBeneGroups = draftSelectedBeneGroups ?? selectedBeneGroups;
+
+  return (
+    <div className="app">
+      {loading && (
+        <div className="loading-overlay">
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+            <div className="loading-spinner" />
+            <span style={{ fontSize: 13.5, color: 'var(--ink-3)' }}>Loading from Monday…</span>
+          </div>
+        </div>
+      )}
+
+      <div className="brand-strip" />
+      <div className="app-top">
+        <div dangerouslySetInnerHTML={{ __html: logoHtml }} />
+        <span style={{ width: 1, height: 26, background: 'var(--line)', flexShrink: 0 }} />
+        <div className="app-nav">
+          <button className={'app-tab' + (tab === 'requests' ? ' is-active' : '')} onClick={() => setTab('requests')}>Requests</button>
+          <button className={'app-tab' + (tab === 'mapping'  ? ' is-active' : '')} onClick={() => setTab('mapping')}>
+            Mapping &amp; settings
+            {hasDraft && <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--warn)', marginLeft: 6, display: 'inline-block', verticalAlign: 'middle' }} />}
+          </button>
+        </div>
+        <div style={{ flex: 1 }} />
+        <span style={{ fontSize: 12.5, color: 'var(--ink-3)', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <span className="wr-dot" style={{ background: loadError ? 'var(--warn)' : 'var(--positive)' }} />
+          {loadError ? 'Monday error' : 'Monday synced'}
+        </span>
+        <div style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11.5, fontWeight: 700, background: 'var(--accent-weak)', border: '1px solid var(--accent-line)', color: 'var(--accent)', flexShrink: 0 }}>
+          {workspace ? (workspace.name || 'RC').slice(0, 2).toUpperCase() : 'RC'}
+        </div>
+      </div>
+
+      {loadError && (
+        <div style={{ padding: '8px 26px', background: 'var(--warn-bg)', borderBottom: '1px solid oklch(0.88 0.06 70)', fontSize: 12.5, color: 'oklch(0.42 0.13 55)', flexShrink: 0 }}>
+          ⚠ Could not connect to Monday: {loadError} — running with sample data.
+        </div>
+      )}
+
+      {!loading && tab === 'requests' && (
+        <WireGrid
+          parsed={parsed}
+          columnMapping={columnMapping}
+          destColumns={destBoard?.columns || []}
+          currencies={currencies}
+          selectedAcctGroups={selectedAcctGroups}
+          selectedBeneGroups={selectedBeneGroups}
+        />
+      )}
+      {!loading && tab === 'mapping' && (
+        <WireMapping
+          parsed={parsed} sourceBoard={sourceBoard} destBoard={destBoard}
+          columnMapping={mappingColumnMapping}
+          setColumnMapping={v => updateDraft('columnMapping', v)}
+          workspace={workspace} onResync={handleResync}
+          currencies={mappingCurrencies}
+          selectedAcctGroups={mappingSelectedAcctGroups}
+          selectedBeneGroups={mappingSelectedBeneGroups}
+          onUpdateDraft={updateDraft}
+          onDiscard={discardDraft}
+          hasDraft={hasDraft}
+          onSave={commitDraft}
+          saving={saving}
+          saveError={saveError}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
